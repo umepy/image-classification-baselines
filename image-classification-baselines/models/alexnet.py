@@ -3,6 +3,14 @@ import jax.numpy as jnp
 from flax import linen as nn
 
 
+def AlexNet(type='pt', **args):
+    if type=='pt':
+        return None
+    elif type=='jx':
+        return AlexNet_JX(args)
+    else:
+        raise NotImplementedError()
+
 class AlexNet_JX(nn.Module):
     """This implementation is not "pure" AlexNet. See the details in "ImageNet Classification with Deep Convolutional Neural Networks" """
 
@@ -40,7 +48,7 @@ class AlexNet_JX(nn.Module):
 
 
 if __name__ == "__main__":
-    model = AlexNet()
+    model = AlexNet_JX()
     key = jax.random.PRNGKey(20220317)
     params = model.init(key, jnp.ones((1, 227, 227, 3)))["params"]
     pred = model.apply({"params": params}, jax.random.normal(key, (10, 227, 227, 3)))
