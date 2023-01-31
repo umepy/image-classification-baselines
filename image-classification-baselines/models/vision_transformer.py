@@ -42,6 +42,10 @@ class VitInputLayer(nn.Module):
         return x
 
 
+class SelfAttention(nn.Module):
+    pass
+
+
 if __name__ == "__main__":
     x = torch.randn((2, 3, 32, 32))
     model = VitInputLayer()
