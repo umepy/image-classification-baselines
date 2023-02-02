@@ -60,6 +60,7 @@ class MultiHeadSelfAttention(nn.Module):
             x.size(0),
             x.size(1),
         )
+        return x
 
 
 if __name__ == "__main__":
