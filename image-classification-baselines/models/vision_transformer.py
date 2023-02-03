@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class VitInputLayer(nn.Module):
@@ -43,23 +44,51 @@ class VitInputLayer(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, emb_dim: int = 384, head: int = 8) -> None:
+    def __init__(self, emb_dim: int = 384, head: int = 8, dropout: float = 0.0) -> None:
         super(MultiHeadSelfAttention, self).__init__()
+        assert emb_dim % head == 0
         self.emb_dim = emb_dim
         self.head = head
+        self.head_dim = emb_dim // head
+        self.sqrt_dh = self.head_dim**0.5
+
         self.query = nn.Linear(emb_dim, emb_dim, bias=False)
         self.key = nn.Linear(emb_dim, emb_dim, bias=False)
         self.value = nn.Linear(emb_dim, emb_dim, bias=False)
 
+        self.attn_dropout = nn.Dropout(dropout)
+        self.w_o = nn.Sequential(nn.Linear(emb_dim, emb_dim), nn.Dropout(dropout))
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.size()) == 3  # (B, Np+1, D)
-        assert x.size(2) % self.head == 0
+        batch_size, num_patch, emb_dim = x.size()
+        assert emb_dim == self.emb_dim
+
+        q = self.query(x)
+        k = self.key(x)
+        v = self.value(x)
 
         # multi-head split
-        x = x.reshape(
-            x.size(0),
-            x.size(1),
-        )
+        q = q.view(batch_size, num_patch, self.head, self.head_dim)
+        k = k.view(batch_size, num_patch, self.head, self.head_dim)
+        v = v.view(batch_size, num_patch, self.head, self.head_dim)
+
+        # self attention was done to the matrix of num_patch and head_dim
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
+
+        attn_weight = q @ k.transpose(2, 3) / self.sqrt_dh  # (B,H,N,N)
+        attn = F.softmax(attn_weight, dim=-1)
+        attn = self.attn_dropout(attn_weight)
+        x = attn @ v
+        x = x.transpose(1, 2)
+
+        # concat multi-head
+        x = x.view(batch_size, num_patch, -1)
+
+        x = self.w_o(x)
+
         return x
 
 
