@@ -91,6 +91,8 @@ class MultiHeadSelfAttention(nn.Module):
 
         return x
 
+class VitEncoderBlock(nn.Module):
+    def __init__
 
 if __name__ == "__main__":
     x = torch.randn((2, 3, 32, 32))
