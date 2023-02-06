@@ -91,8 +91,11 @@ class MultiHeadSelfAttention(nn.Module):
 
         return x
 
+
 class VitEncoderBlock(nn.Module):
-    def __init__
+    def __init__(self, emb_dim: int = 384, head: int = 8, hidden_dim: int = 384 * 4, dropout: float = 0.0):
+        super(VitEncoderBlock, self).__init__()
+
 
 if __name__ == "__main__":
     x = torch.randn((2, 3, 32, 32))
