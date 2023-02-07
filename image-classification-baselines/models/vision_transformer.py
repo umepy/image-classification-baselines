@@ -85,19 +85,38 @@ class MultiHeadSelfAttention(nn.Module):
         x = x.transpose(1, 2)
 
         # concat multi-head
-        x = x.view(batch_size, num_patch, -1)
+        x = x.reshape(batch_size, num_patch, -1)
 
         x = self.w_o(x)
 
-        return x
+        return x  # (B, Np+1, D)
 
 
 class VitEncoderBlock(nn.Module):
     def __init__(self, emb_dim: int = 384, head: int = 8, hidden_dim: int = 384 * 4, dropout: float = 0.0):
         super(VitEncoderBlock, self).__init__()
+        self.ln1 = nn.LayerNorm(emb_dim)
+        self.mhsa = MultiHeadSelfAttention(emb_dim, head, dropout)
+        self.ln2 = nn.LayerNorm(emb_dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(emb_dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, emb_dim),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.mhsa(self.ln1(x)) + x
+        x = self.mlp(self.ln2(x)) + x
+        return x
 
 
 if __name__ == "__main__":
     x = torch.randn((2, 3, 32, 32))
-    model = VitInputLayer()
-    model(x)
+    vitin = VitInputLayer()
+    vitenc = VitEncoderBlock()
+    x = vitin(x)
+    print(x.size())
+    x = vitenc(x)
+    print(x.size())
