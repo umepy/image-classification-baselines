@@ -112,6 +112,11 @@ class VitEncoderBlock(nn.Module):
         return x
 
 
+class Vit(nn.Module):
+    def __init__(self) -> None:
+        super(Vit, self).__init__()
+
+
 if __name__ == "__main__":
     x = torch.randn((2, 3, 32, 32))
     vitin = VitInputLayer()
